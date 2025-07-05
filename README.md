@@ -30,5 +30,5 @@ A simple URL shortener built using **Flask** and **MySQL** — allows users to c
 ### 1️⃣ Clone the repository
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/url-shortener.git
+git remote add origin https://github.com/Vaibhavjare/url-shortener.git
 cd url-shortener

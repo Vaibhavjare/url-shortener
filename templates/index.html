@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>URL Shortener</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <div class="card">
+    <h2>Shorten a long URL</h2>
+    <form method="POST">
+        <input type="text" name="url" placeholder="Enter long link here" required>
+        <input type="text" name="custom" placeholder="Enter alias (required)" required>
+        <input type="text" name="name" placeholder="Your name (required)" required>
+        <button type="submit">Shorten URL</button>
+    </form>
+
+    {% if short %}
+    <div class="result">
+      <strong>Your short link:</strong><br>
+      <a href="/{{ short }}">{{ request.host_url }}{{ short }}</a>
+    </div>
+    {% endif %}
+  </div>
+</body>
+</html>

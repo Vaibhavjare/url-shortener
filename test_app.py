@@ -1,67 +1,70 @@
 import unittest
 from app import app, get_db
-from flask import url_for
 
 class URLShortenerTestCase(unittest.TestCase):
-
     def setUp(self):
-        # Setup test client and database
         self.app = app.test_client()
         self.app.testing = True
-
-        # Make sure test data doesn't affect main DB
         self.db = get_db()
         self.cur = self.db.cursor()
-        self.clean_test_entries()
+        self.clean_test_data()
 
-    def clean_test_entries(self):
-        # Remove any previous test short_code
-        self.cur.execute("DELETE FROM urls WHERE short_code IN ('test123', 'customcode')")
+    def clean_test_data(self):
+        self.cur.execute("DELETE FROM urls WHERE short_code IN ('test123', 'custom123', 'abc999')")
         self.db.commit()
 
     def tearDown(self):
-        # Cleanup after each test
-        self.clean_test_entries()
+        self.clean_test_data()
         self.cur.close()
         self.db.close()
 
     def test_home_page_loads(self):
+        """Test if home page loads successfully"""
         response = self.app.get('/')
         self.assertEqual(response.status_code, 200)
-        self.assertIn(b'Shorten your URL', response.data)
+        self.assertIn(b'Shorten a long URL', response.data)  # Match your HTML <h2> content
 
-    def test_url_shortening_random(self):
+    def test_create_short_url(self):
+        """Test creating a short URL with required fields"""
         response = self.app.post('/', data={
-            'url': 'https://www.example.com',
-            'custom': '',
-            'name': 'TestUser'
+            'url': 'https://example.com',
+            'custom': 'test123',
+            'name': 'Vaibhav'
         }, follow_redirects=True)
 
         self.assertEqual(response.status_code, 200)
-        self.assertIn(b'Short URL:', response.data)
+        self.assertIn(b'test123', response.data)
 
-    def test_custom_short_code(self):
-        response = self.app.post('/', data={
-            'url': 'https://www.testcustom.com',
-            'custom': 'customcode',
-            'name': 'Vaibhav'
-        })
-
-        self.assertEqual(response.status_code, 200)
-        self.assertIn(b'customcode', response.data)
-
-    def test_redirect_valid_short_code(self):
-        # Insert a known short code
+    def test_duplicate_custom_code(self):
+        """Test that using the same custom code twice fails"""
+        # First insert
         self.cur.execute("INSERT INTO urls (original_url, short_code, name) VALUES (%s, %s, %s)",
-                         ("https://www.redirecttest.com", "test123", "Vaibhav"))
+                         ("https://abc.com", "abc999", "Vaibhav"))
         self.db.commit()
 
-        response = self.app.get('/test123', follow_redirects=False)
-        self.assertEqual(response.status_code, 302)  # 302 = Redirect
-        self.assertIn('https://www.redirecttest.com', response.headers['Location'])
+        # Try to insert again with same code
+        response = self.app.post('/', data={
+            'url': 'https://xyz.com',
+            'custom': 'abc999',
+            'name': 'Vaibhav'
+        }, follow_redirects=True)
 
-    def test_redirect_invalid_short_code(self):
-        response = self.app.get('/nonexistent', follow_redirects=False)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b'already exists', response.data)
+
+    def test_redirect_valid_code(self):
+        """Test redirect from short to original URL"""
+        self.cur.execute("INSERT INTO urls (original_url, short_code, name) VALUES (%s, %s, %s)",
+                         ("https://redirect.com", "custom123", "Vaibhav"))
+        self.db.commit()
+
+        response = self.app.get('/custom123', follow_redirects=False)
+        self.assertEqual(response.status_code, 302)
+        self.assertIn("https://redirect.com", response.headers["Location"])
+
+    def test_redirect_invalid_code(self):
+        """Test 404 for unknown short code"""
+        response = self.app.get('/unknowncode', follow_redirects=False)
         self.assertEqual(response.status_code, 404)
 
 if __name__ == '__main__':

@@ -1,4 +1,4 @@
-"# URL Shortener Project" 
+"# My Clean Updated URL Shortener README" 
 # 🔗 URL Shortener
 
 A simple URL shortener built using **Flask** and **MySQL** — allows users to create short links with custom aliases, and redirects to the original URL. No login or registration is required.
@@ -30,5 +30,5 @@ A simple URL shortener built using **Flask** and **MySQL** — allows users to c
 ### 1️⃣ Clone the repository
 
 ```bash
-git remote add origin https://github.com/Vaibhavjare/url-shortener.git
+git clone  https://github.com/Vaibhavjare/url-shortener.git
 cd url-shortener
